@@ -30,17 +30,52 @@ def chat():
     data = request.get_json()
     user_message = data.get('message', '')
 
+    column_mapping = {
+    "patient name": "patient_name",
+    "name": "patient_name",
+    "bill": "total_bill",
+    "amount": "total_bill",
+    "charges": "total_bill",
+    "visit date": "visit_date",
+    "department": "department",
+    "gender": "gender",
+    "age": "age",
+    }
+
+    for word, col in column_mapping.items():
+        if word.lower() in user_message.lower():
+            user_message = user_message.lower().replace(word.lower(), col)
+
+
+
     try:
         # Ask Gemini via OpenRouter
         prompt = f"""
-        You are a SQL generator for a MySQL database.
-        The table name is 'patient_visits' with columns:
-        id, patient_name, age, gender, department, visit_date, total_bill.
-        Convert the following natural language into a SQL SELECT query.
-        Only return the raw SQL, no markdown, no ``` fences, no explanation.
+            You are a SQL generator for a MySQL database.
 
-        User request: {user_message}
-        """
+            Table: patient_visits
+            Columns:
+            id
+            name
+            age
+            gender
+            department
+            diagnosis
+            visit_date
+            total_bill
+
+            If the user uses different terms for a column, map them to the correct one:
+            Examples:
+            - "patient name" or "name" → patient_name
+            - "bill", "amount", or "charges" → total_bill
+            - "visit date" → visit_date
+
+            Generate a SQL SELECT query that matches the user request exactly.
+            Only return the SQL code with no extra text.
+
+            User request: {user_message}
+            """
+
 
         response = requests.post(
             "https://openrouter.ai/api/v1/chat/completions",
